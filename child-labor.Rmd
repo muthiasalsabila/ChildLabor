@@ -1,0 +1,664 @@
+---
+title: "child-labor"
+author: "Muthia Salsabila"
+date: "2024-06-20"
+output: html_document
+---
+# Setting Work Directory and Packages
+```{r setup, include=FALSE}
+setwd('C:/users/tough/R/ChildLabor')
+```
+
+```{r packages, include=FALSE, warning=FALSE}
+library('haven')
+library('tidyverse')
+library('dplyr')
+library('plm')
+library('stargazer')
+library('ggplot2')
+library("sandwich")
+library("rmarkdown")
+library("lmtest")
+library("car")
+library("pglm")
+library("did")
+library("did2s")
+library("fixest")
+library("lfe")
+library("mfx")
+library("DRDID")
+library("MatchIt")
+library("Matching")
+library("panelr")
+library("etwfe")
+library("flextable")
+library("gtsummary")
+library("survival")
+library("jtools")
+library("margins")
+library("bife")
+library("huxtable")
+library("lme4")
+```
+
+# Load Data IFLS 4
+```{r}
+b1_ksr1_4 <- read_dta('data/IFLS4/hh07_all_dta/b1_ksr1.dta')
+b1_ks1_4 <- read_dta('data/IFLS4/hh07_all_dta/b1_ks1.dta')
+b1_ks2_4 <- read_dta('data/IFLS4/hh07_all_dta/b1_ks2.dta')
+b2_kr_4 <- read_dta('data/IFLS4/hh07_all_dta/b2_kr.dta')
+b2_hr1_4<- read_dta('data/IFLS4/hh07_all_dta/b2_hr1.dta')
+b2_ut1_4<- read_dta('data/IFLS4/hh07_all_dta/b2_ut1.dta')
+b3a_cov_4 <- read_dta('data/IFLS4/hh07_all_dta/b3a_cov.dta')
+b3a_tk2_4 <- read_dta('data/IFLS4/hh07_all_dta/b3a_tk2.dta')
+b3a_hi_4 <- read_dta('data/IFLS4/hh07_all_dta/b3a_hi.dta') 
+b3a_dl1_4 <- read_dta('data/IFLS4/hh07_all_dta/b3a_dl1.dta')
+b5_dla6_4 <- read_dta('data/IFLS4/hh07_all_dta/b5_dla6.dta') 
+b5_cov_4 <- read_dta('data/IFLS4/hh07_all_dta/b5_cov.dta') 
+b5_baa_4 <- read_dta('data/IFLS4/hh07_all_dta/b5_baa.dta')
+b5_dla1_4 <- read_dta('data/IFLS4/hh07_all_dta/b5_dla1.dta')
+b5_dla2_4 <- read_dta('data/IFLS4/hh07_all_dta/b5_dla2.dta')
+bk_ar1_4 <- read_dta('data/IFLS4/hh07_all_dta/bk_ar1.dta')
+bk_sc1_4 <- read_dta('data/IFLS4/hh07_all_dta/bk_sc.dta')
+bk_krk_4 <- read_dta('data/IFLS4/hh07_all_dta/bk_krk.dta')
+b4_ch0_4 <- read_dta('data/IFLS4/hh07_all_dta/b4_ch0.dta')
+b4_bf_4 <- read_dta('data/IFLS4/hh07_all_dta/b4_bf.dta')
+```
+
+# Load Data IFLS 5
+```{r}
+b1_ksr1_5 <- read_dta('data/IFLS5/hh14/b1_ksr1.dta')
+b1_ks1_5 <- read_dta('data/IFLS5/hh14/b1_ks1.dta')
+b1_ks2_5 <- read_dta('data/IFLS5/hh14/b1_ks2.dta')
+b2_kr_5 <- read_dta('data/IFLS5/hh14/b2_kr.dta')
+b2_hr1_5<- read_dta("data/IFLS5/hh14/b2_hr1.dta")
+b2_ut1_5<- read_dta("data/IFLS5/hh14/b2_ut1.dta")
+b3a_cov_5 <- read_dta('data/IFLS5/hh14/b3a_cov.dta')
+b3a_tk2_5 <- read_dta('data/IFLS5/hh14/b3a_tk2.dta') 
+b3a_hi_5 <- read_dta('data/IFLS5/hh14/b3a_hi.dta')
+b3a_dl1_5 <- read_dta('data/IFLS5/hh14/b3a_dl1.dta')
+b5_dla6_5 <- read_dta('data/IFLS5/hh14/b5_dla6.dta')
+b5_cov_5 <- read_dta('data/IFLS5/hh14/b5_cov.dta')
+b5_baa_5 <- read_dta('data/IFLS5/hh14/b5_baa.dta')
+b5_dla1_5 <- read_dta("data/IFLS5/hh14/b5_dla1.dta")
+b5_dla2_5 <- read_dta("data/IFLS5/hh14/b5_dla2.dta")
+bk_ar1_5 <- read_dta('data/IFLS5/hh14/bk_ar1.dta')
+bk_sc1_5 <- read_dta('data/IFLS5/hh14/bk_sc1.dta')
+bk_krk_5 <- read_dta("data/IFLS5/hh14/bk_krk.dta")
+b4_ch0_5 <- read_dta('data/IFLS5/hh14/b4_ch0.dta')
+b4_bf_5 <- read_dta('data/IFLS5/hh14/b4_bf.dta')
+```
+
+# Data IFLS 4
+## Filter Data
+### Variabel Outcome (Child Labor)
+
+Pengukuran child labor menggunakan dummy variabel: 0(tidak bekerja) dan
+1(bekerja), serta jam kerja anak per minggu: 0 (jika bekerja), <168
+(bekerja)
+
+* *dla2type* : 1(wages), 2(family farm business), 3(family non-farm business), 4(household work)
+* *dla56a* (Has child ever work) : 1(yes), 3(no), 9(missing)
+* *dla57a* (did child work in the last month) : 1(yes), 3(no), 9(missing)
+* *dla58a* (time of work)
+* *dla59a* (number of weeks child work)
+```{r}
+length(unique(b5_dla6_4$pidlink))
+```
+
+```{r}
+cl_wages4 <- b5_dla6_4 %>%
+  dplyr::select(hhid07,pid07,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 1) %>% 
+  rename(work1 = dla57a,
+         totwork1 = dla58a) 
+cl_farm4 <- b5_dla6_4 %>%
+  dplyr::select(hhid07,pid07,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 2) %>% 
+  rename(work2 = dla57a,
+         totwork2 = dla58a)
+cl_bus4 <- b5_dla6_4 %>%
+  dplyr::select(hhid07,pid07,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 3) %>% 
+  rename(work3 = dla57a,
+         totwork3 = dla58a) 
+```
+```{r}
+cl_list4 <- list(cl_wages4,cl_farm4,cl_bus4)
+cl_work4 <- cl_list4 %>% reduce(full_join, by=c("hhid07","pid07","pidlink")) %>% 
+  mutate(totwork1 = replace_na(totwork1,0),
+         totwork2 = replace_na(totwork2,0),
+         totwork3 = replace_na(totwork3,0)) %>% 
+  mutate(totwork5 = totwork1+totwork2+totwork3) %>% 
+  dplyr::select(hhid07,pid07,pidlink,totwork5) %>% 
+  mutate(type5 = ifelse(totwork5 == 0,0,1),
+         work5 = ifelse(totwork5 > 0,1,0))
+```
+```{r}
+cl_chores4 <- b5_dla6_4 %>%
+  dplyr::select(hhid07,pid07,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 4) %>% 
+  rename(work4 = dla57a,
+         totwork4 = dla58a) %>% 
+  mutate(type4 = ifelse(totwork4 == 0,0,2)) %>% 
+  dplyr::select(-dla2type)
+```
+
+1(economy)
+2(chores)
+3(both)
+4(no work)
+```{r}
+cl4 <- full_join(cl_work4,cl_chores4, by=c("hhid07","pid07","pidlink")) %>% 
+  mutate(type4 = replace_na(type4,0)) %>% 
+  mutate(type = case_when(type5 == 1 & type4 == 0 & work5 == 1 ~ 1,
+                          type4 == 2 & type5 == 0 ~ 2,
+                          type4 == 2 & type5 == 1 ~ 3,
+                          type4 == 0 & type5 == 0 ~ 4),
+         act_hour = totwork4+totwork5) %>% 
+  dplyr::select(hhid07,pid07,pidlink,act_hour,type) %>% 
+  mutate(act_hour = replace_na(act_hour,0),
+         work = ifelse(type %in% c(1,3) & act_hour > 0,1,0),
+         totwork = replace(act_hour, work != 1, 0))
+  
+```
+```{r}
+cl4 %>% count(work == 1)
+```
+```{r}
+cl4 %>% count(totwork > 0)
+```
+
+```{r}
+colSums(is.na(cl4))
+```
+
+### Variabel Independen (PKH)
+Pengukuran cash transfer menggunakan dummy variabel: 0(tidak mendapat
+cash transfer), 1(mendapat cash transfer), serta jumlah cash transfer
+yang diterima: 0 rupiah(jika tidak menerima), >1 rupiah(jika mendapat
+cash transfer)
+
+* *ksr17(receive CT)*: 1(yes), 3(no), 6(no program)
+* *ksr3type*: B(PKH), C(BLT)
+* *ksr21* (total amount)
+* *ksr21x* (know total amount): 1(yes)
+
+```{r}
+ct4 <- b1_ksr1_4 %>%
+  dplyr::select(hhid07,ksr17, ksr3type) %>% 
+  rename(ct = ksr17,
+         type_ct = ksr3type) %>%
+  mutate(ct = replace(ct, ct != 1, 0)) #0(no ct), 1(ct) 
+```
+
+### Variabel Lain
+#### Household Head Income
+```{r}
+income4 <- bk_ar1_4 %>% 
+  dplyr::select(hhid07, pidlink,pid07, ar02b, ar15b) %>% 
+  filter(ar02b == 1) %>% 
+  rename(income_hhh = ar15b) %>% 
+  mutate(income_hhh = income_hhh/52) %>% 
+  dplyr::select(-(ar02b))
+```
+```{r}
+wage4 <- b3a_tk2_4 %>% 
+  dplyr::select(hhid07, pid07, pidlink, tk25a1) %>% 
+  mutate(wage4 = tk25a1/4) %>% 
+  dplyr::select(-(tk25a1))
+```
+
+
+#### Household head Educ
+```{r}
+eh4 <- b3a_dl1_4 %>%
+  dplyr::select(hhid07,dl06, pid07,pidlink) %>%
+  mutate(educ_time = c(plyr::mapvalues(dl06, from = c("2","11","72","3","4","12","73","5"
+                                                  ,"6","15","74","60","61","62","63","14",
+                                                  "17","95"),
+                                  to = c(6,6,6,9,9,9,9,12,12,12,
+                                         12,15,16,18,21,0,0,0))))
+```
+
+#### Child's Educ
+2. Elementary school                        
+3. Junior High - General                     
+4. Junior High - Vocational                     
+5. Senior High - General                        
+6. Senior High - Vocational                    
+12. Adult Education B                        
+14. Pondok pesantren                           
+17. School for the disable                       
+72. Madrasah Ibtidaiyah                        
+73. Madrasah Tsanawiyah                       
+95. Others                                      
+
+```{r}
+educ4 <- b5_dla1_4 %>% 
+  dplyr::select(hhid07,pidlink,pid07,dla08,dla07) %>% 
+  mutate(dla08 = replace(dla08,dla07 == 3,0)) %>%   
+  mutate(educ = c(plyr::mapvalues(dla08, from = c("2","72","3","4","73","12","5","6",
+                                                  "14","17","95"),
+                                   to = c(1,1,2,2,2,2,3,3,0,0,0)))) 
+  
+```
+
+```{r}
+educ4 <- educ4 %>% 
+  mutate(sd = if_else(educ==1, 1, 0),
+         smp = if_else(educ==2, 1, 0),
+         sma = if_else(educ==3,1,0),
+         school = if_else(educ == 0,0,1)) %>% 
+  dplyr::select(hhid07,pidlink,pid07,sd,smp,sma,school)
+```
+```{r}
+educ4 %>% count(school)
+```
+
+#### Child's Characteristics
+```{r}
+child_char4 <- b5_cov_4 %>%
+  select(sex, age, hhid07, pid07, pidlink) %>%
+  mutate(sex = replace(sex, sex == 1, 0),
+         sex = replace(sex, sex == 3, 1)) #0(male), 1(female)
+```
+
+#### Household Characteristics
+jadiin semua variabel ke dummy.
+1 untuk yang memenuhi kriteria orang miskin
+
+```{r}
+h_char4 <- b2_kr_4 %>% 
+  select(hhid07,kr11,kr13,kr20,kr24) %>% 
+  rename(listrik = kr11,
+         air = kr13,
+         wc = kr20,
+         cook = kr24) %>% 
+  mutate(listrik = if_else(listrik == 1,0,1),
+         air = if_else(air %in% c(1,2,10),0,1),
+         wc = if_else(wc %in% c(1,2),0,1),
+         cook = if_else(cook %in% c(1,2),0,1)) 
+```
+```{r}
+h_char4_1 <- bk_krk_4 %>% 
+  select(hhid07,krk05a,krk08,krk09) %>% 
+  rename(luas = krk05a,
+         lantai = krk08,
+         dinding = krk09) %>% 
+  mutate(lantai = if_else(lantai %in% c(1,2),0,1),
+         dinding = if_else(dinding == 1,0,1))
+```
+```{r}
+house4 <- inner_join(h_char4,h_char4_1, by="hhid07")
+```
+
+#### District Code
+```{r}
+district4 <- bk_sc1_4 %>% 
+  dplyr::select(hhid07,sc010707,sc020707) %>%
+  mutate(district = paste0(sc010707,sc020707)) %>% 
+  dplyr::select(hhid07,district)
+```
+
+#### Urban
+```{r}
+urban4 <- bk_sc1_4 %>% 
+  dplyr::select(sc05, hhid07) %>%   
+  mutate(urban = replace(sc05,sc05 == 2, 0)) %>% 
+  dplyr::select(-(sc05))
+```
+
+#### Pregnancies
+```{r}
+preg4 <- b4_ch0_4 %>% 
+  dplyr::select(hhid07,ch01ac)
+bf4 <- b4_bf_4 %>% 
+  dplyr::select(hhid07,bf07x) %>% 
+  filter(bf07x == 96)
+pregnant4 <- full_join(preg4,bf4, by="hhid07") %>% 
+  mutate(preg = replace_na(ch01ac, 0),
+         preg = replace(preg,bf07x == 96,1)) %>% 
+  dplyr::select(preg,hhid07)
+```
+
+#### Lansia
+```{r}
+lansia4 <- b3a_cov_4 %>% 
+  dplyr::select(hhid07,age) %>% 
+  mutate(lansia = ifelse(age >= 60, 1,0)) %>% 
+  dplyr::select(!(age))
+```
+
+
+## Merge Dataset IFLS 4
+### Merge Variabel Lain
+```{r}
+income_list <- list(income4, wage4,eh4)
+parent4 <- income_list %>% 
+  reduce(left_join, by=c("hhid07","pid07","pidlink")) %>% 
+  mutate(income = coalesce(income_hhh,wage4)) %>% 
+  dplyr::select(hhid07,educ_time,income)
+```
+
+### Merge Dataset
+```{r}
+hh_list <- list(ct4,parent4,district4,urban4,house4,pregnant4,lansia4)
+child_list <- list(cl4, educ4,child_char4)
+hh4 <- hh_list %>% reduce(full_join, by="hhid07")
+child4 <- child_list %>% reduce(full_join, by=c("hhid07","pidlink","pid07"))
+```
+```{r}
+child4 %>% count(work)
+```
+
+
+(1) Anak berusia 5 – 12 yang bekerja minimal 1 jam per minggu 
+dengan jenis pekerjaan berupa pekerjaan berbayar, pekerjaan pada bisnis 
+pertanian keluarga, pekerjaan pada bisnis non-pertanian keluarga, 
+(2) anak berusia 13 – 14 tahun yang bekerja lebih dari 15 jam per minggu dengan jenis pekerjaan berupa pekerjaan berbayar, pekerjaan pada bisnis pertanian keluarga, pekerjaan pada bisnis non-pertanian keluarga
+(3) anak berusia 5 – 14 tahun yang mengerjakan pekerjaan rumah lebih dari 21 jam per minggu. 
+
+
+```{r}
+child44 <- child4 %>% 
+  mutate(work = replace(work, totwork<15 & age>12,0),
+         work = replace(work, act_hour>20 & age>0,1))
+```
+```{r}
+child44 %>% count(work)
+```
+
+
+```{r}
+ifls4 <- inner_join(child44, hh4, by = "hhid07") %>% 
+  na.omit() %>%
+  mutate(year = 2007) %>%
+  rename(hhid = hhid07,
+         pid = pid07) 
+```
+
+# Data IFLS 5
+## Filter Data
+### Variabel Outcome (Child Labor)
+Pengukuran child labor menggunakan dummy variabel: 0(tidak bekerja) dan
+1(bekerja), serta jam kerja anak per minggu: 0 (jika bekerja), <168
+(bekerja)
+
+* *dla2type* : 1(wages), 2(family farm business), 3(family non-farm business), 4(household work)
+* *dla56a* (Has child ever work) : 1(yes), 3(no), 9(missing)
+* *dla57a* (did child work in the last month) : 1(yes), 3(no), 9(missing)
+* *dla58a* (time of work)
+* *dla59a* (number of weeks child work)
+```{r}
+length(unique(b5_dla6_5$pidlink))
+```
+
+```{r}
+cl_wages5 <- b5_dla6_5 %>%
+  dplyr::select(hhid14,pid14,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 1) %>% 
+  rename(work1 = dla57a,
+         totwork1 = dla58a) 
+cl_farm5 <- b5_dla6_5 %>%
+  dplyr::select(hhid14,pid14,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 2) %>% 
+  rename(work2 = dla57a,
+         totwork2 = dla58a)
+cl_bus5 <- b5_dla6_5 %>%
+  dplyr::select(hhid14,pid14,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 3) %>% 
+  rename(work3 = dla57a,
+         totwork3 = dla58a) 
+```
+```{r}
+cl_list5 <- list(cl_wages5,cl_farm5,cl_bus5)
+cl_work5 <- cl_list5 %>% reduce(full_join, by=c("hhid14","pid14","pidlink")) %>% 
+  mutate(totwork1 = replace_na(totwork1,0),
+         totwork2 = replace_na(totwork2,0),
+         totwork3 = replace_na(totwork3,0)) %>% 
+  mutate(totwork5 = totwork1+totwork2+totwork3) %>% 
+  dplyr::select(hhid14,pid14,pidlink,totwork5) %>% 
+  mutate(type5 = ifelse(totwork5 == 0,0,1),
+         work5 = ifelse(totwork5 > 0,1,0))
+```
+```{r}
+cl_chores5 <- b5_dla6_5 %>%
+  dplyr::select(hhid14,pid14,pidlink,dla2type,dla57a,dla58a) %>%
+  filter(dla2type == 4) %>% 
+  rename(work4 = dla57a,
+         totwork4 = dla58a) %>% 
+  mutate(type4 = ifelse(totwork4 == 0,0,2)) %>% 
+  dplyr::select(-dla2type)
+```
+
+1(economy)
+2(chores)
+3(both)
+4(no work)
+```{r}
+cl5 <- full_join(cl_work5,cl_chores5, by=c("hhid14","pid14","pidlink")) %>% 
+  mutate(type4 = replace_na(type4,0)) %>% 
+  mutate(type = case_when(type5 == 1 & type4 == 0 & work5 == 1 ~ 1,
+                          type4 == 2 & type5 == 0 ~ 2,
+                          type4 == 2 & type5 == 1 ~ 3,
+                          type4 == 0 & type5 == 0 ~ 4),
+         act_hour = totwork4+totwork5) %>% 
+  dplyr::select(hhid14,pid14,pidlink,act_hour,type) %>% 
+  mutate(act_hour = replace_na(act_hour,0),
+         work = ifelse(type %in% c(1,3) & act_hour > 0,1,0),
+         totwork = replace(act_hour, work != 1, 0))
+  
+```
+```{r}
+cl5 %>% count(work == 1)
+```
+```{r}
+cl5 %>% count(totwork > 0)
+```
+
+```{r}
+colSums(is.na(cl5))
+```
+
+### Variabel Independen (PKH)
+Pengukuran cash transfer menggunakan dummy variabel: 0(tidak mendapat
+cash transfer), 1(mendapat cash transfer)
+
+* *ksr17(receive CT)*: 1(yes), 3(no), 6(no program)
+* *ksr3type*: B(PKH), C(BLT)
+
+```{r}
+ct5 <- b1_ksr1_5 %>%
+  dplyr::select(hhid14,ksr17, ksr3type) %>% 
+  rename(ct = ksr17,
+         type_ct = ksr3type) %>%
+  filter(type_ct == "B") %>% 
+  mutate(ct = replace(ct, ct != 1, 0)) #0(no ct), 1(ct) 
+```
+```{r}
+ct5 %>% count(ct == 1)
+```
+
+### Variabel Lain
+#### Household Head Income
+```{r}
+income5 <- bk_ar1_5 %>% 
+  dplyr::select(hhid14, pidlink,pid14, ar02b, ar15b) %>% 
+  filter(ar02b == 1) %>% 
+  rename(income_hhh = ar15b) %>% 
+  mutate(income_hhh = income_hhh/52) %>% 
+  dplyr::select(-(ar02b))
+```
+```{r}
+wage5 <- b3a_tk2_5 %>% 
+  dplyr::select(hhid14, pid14, pidlink, tk25a1) %>% 
+  mutate(wage5 = tk25a1/4) %>% 
+  dplyr::select(-(tk25a1))
+```
+
+
+#### Household head Educ
+```{r}
+eh5 <- b3a_dl1_5 %>%
+  dplyr::select(hhid14,dl06, pid14,pidlink) %>%
+  mutate(educ_time = c(plyr::mapvalues(dl06, from = c("2","11","72","3","4","12","73","5"
+                                                  ,"6","15","74","60","61","62","63","14",
+                                                  "17","90","95","98","99"),
+                                  to = c(6,6,6,9,9,9,9,12,12,12,
+                                         12,15,16,18,21,0,0,0,0,0,0))))
+```
+
+#### Child's Educ
+2. Elementary school                         5,104     37.78
+                   3. Junior High - General                     1,204      8.91
+                   4. Junior High - Vocational                     19      0.14
+                   5. Senior High - General                        16      0.12
+                   6. Senior High - Vocational                      9      0.07
+                   12. Adult Education B                            3      0.02
+                   14. Pondok pesantren                            12      0.09
+                   17. School for the disable                       4      0.03
+                   72. Madrasah Ibtidaiyah                        381      2.82
+                   73. Madrasah Tsanawiyah                        305      2.26
+                   95. Others                                       1      0.01
+```{r}
+educ5 <- b5_dla1_5 %>% 
+  dplyr::select(hhid14,pidlink,pid14,dla08,dla07) %>% 
+  mutate(dla08 = replace(dla08,dla07 == 3,0)) %>%   
+  mutate(educ = c(plyr::mapvalues(dla08, from = c("2","72","3","4","73","12","5","6","74",
+                                                  "14","17","95","98"),
+                                   to = c(1,1,2,2,2,2,3,3,3,0,0,0,0))))
+  
+```
+
+```{r}
+educ5 <- educ5 %>% 
+  mutate(sd = if_else(educ==1, 1, 0),
+         smp = if_else(educ==2, 1, 0),
+         sma = if_else(educ==3,1,0),
+         school = if_else(educ == 0,0,1)) %>% 
+  dplyr::select(hhid14,pidlink,pid14,sd,smp,sma,school)
+```
+```{r}
+educ5 %>% count(school)
+```
+
+#### Child Characteristics
+```{r}
+child_char5 <- b5_cov_5 %>%
+  select(sex, age, hhid14, pid14, pidlink) %>%
+  mutate(sex = replace(sex, sex == 1, 0),
+         sex = replace(sex, sex == 3, 1))  #0(male), 1(female)
+```
+#### Household Characteristics
+jadiin semua variabel ke dummy.
+1 untuk yang memenuhi kriteria orang miskin
+
+```{r}
+h_char5 <- b2_kr_5 %>% 
+  select(hhid14,kr11,kr13,kr20,kr24) %>% 
+  rename(listrik = kr11,
+         air = kr13,
+         wc = kr20,
+         cook = kr24) %>% 
+  mutate(listrik = if_else(listrik == 1,0,1),
+         air = if_else(air %in% c(1,2,10),0,1),
+         wc = if_else(wc %in% c(1,2),0,1),
+         cook = if_else(cook %in% c(1,2),0,1)) 
+```
+```{r}
+h_char5_1 <- bk_krk_5 %>% 
+  select(hhid14,krk05a,krk08,krk09) %>% 
+  rename(luas = krk05a,
+         lantai = krk08,
+         dinding = krk09) %>% 
+  mutate(lantai = if_else(lantai %in% c(1,2),0,1),
+         dinding = if_else(dinding == 1,0,1))
+```
+```{r}
+house5 <- inner_join(h_char5,h_char5_1, by="hhid14")
+house5$luas <- as.character(house5$luas)
+house5$luas <- as.numeric(str_extract(house5$luas, "\\d+"))
+```
+
+#### District Code
+```{r}
+district5 <- bk_sc1_5 %>% 
+  dplyr::select(hhid14, sc01_14_14,sc02_14_14) %>% 
+  mutate(district = paste0(sc01_14_14, sc02_14_14)) %>% 
+  dplyr::select(hhid14,district)
+```
+
+#### Urban
+```{r}
+urban5 <- bk_sc1_5 %>% 
+  dplyr::select(sc05, hhid14) %>%   
+  mutate(urban = replace(sc05,sc05 == 2, 0)) %>% 
+  dplyr::select(-(sc05))
+```
+
+#### Pregnancies
+```{r}
+preg5 <- b4_ch0_5 %>% 
+  dplyr::select(hhid14,ch01ac)
+bf5 <- b4_bf_5 %>% 
+  dplyr::select(hhid14,bf07x) %>% 
+  filter(bf07x == 96)
+pregnant5 <- full_join(preg5,bf5, by="hhid14") %>% 
+  mutate(preg = replace_na(ch01ac, 0),
+         preg = replace(preg,bf07x == 96,1)) %>% 
+  dplyr::select(preg,hhid14)
+```
+
+#### Lansia
+```{r}
+lansia5 <- b3a_cov_5 %>% 
+  dplyr::select(hhid14,age) %>% 
+  mutate(lansia = ifelse(age >= 60, 1,0)) %>% 
+  dplyr::select(!(age))
+```
+
+## Merge Dataset IFLS 5
+### Merge Variabel Lain
+```{r}
+income_list5 <- list(income5, wage5,eh5)
+parent5 <- income_list5 %>% 
+  reduce(left_join, by=c("hhid14","pid14","pidlink")) %>% 
+  mutate(income = coalesce(income_hhh,wage5)) %>% 
+  dplyr::select(hhid14,educ_time,income)
+```
+
+### Merge Dataset
+```{r}
+hh_list5 <- list(ct5,parent5,district5,urban5,house5,lansia5,pregnant5)
+child_list5 <- list(cl5, educ5, child_char5)
+hh5 <- hh_list5 %>% reduce(full_join, by="hhid14")
+child5 <- child_list5 %>% reduce(full_join, by=c("hhid14","pidlink","pid14"))
+```
+```{r}
+child5 %>% count(work)
+```
+
+```{r}
+child55 <- child5 %>% 
+  mutate(work = replace(work, totwork<15 & age>12,0),
+         work = replace(work, act_hour>20 & age>0,1))
+```
+```{r}
+child55 %>% count(work)
+```
+
+```{r}
+ifls5 <- inner_join(child5, hh5, by = "hhid14") %>% 
+  mutate(year = 2014) %>% 
+  rename(hhid = hhid14,
+         pid = pid14) %>%  
+  na.omit()
+  drop_na(ct,listrik,school,income,educ_time) %>%   
+  mutate(work = replace_na(work,0),
+         totwork = replace_na(totwork, 0))
+  
+```
+```{r}
+colSums(is.na(ifls5))
+```
